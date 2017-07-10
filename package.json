@@ -1,0 +1,16 @@
+{
+  "name": "conversation.one",
+  "version": "1.0.0",
+  "description": "You have been requested to create a web application that allows customers to view and edit a",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ziv Brachia",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "express": "^4.15.3",
+    "mysql": "^2.13.0"
+  }
+}
