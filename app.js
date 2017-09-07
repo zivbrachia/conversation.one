@@ -12,4 +12,4 @@ require('./lib/routes')(app);
 
 app.listen(port);
 
-console.log('Your application is running on http://localhost:' + port);
+console.log('Your application is running on http://localhost:' + port + ", Process id: " + process.pid);

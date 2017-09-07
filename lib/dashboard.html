@@ -71,46 +71,6 @@
             <th style="width:10%;">Rating</th>
             <th style="width:10%;">Actor Names</th>
         </tr>
-        <tr>
-            <td>Alfreds Futterkiste</td>
-            <td>Germany</td>
-            <td>Alfreds Futterkiste</td>
-            <td>Germany</td>
-            <td>Alfreds Futterkiste</td>
-            <td>Germany</td>
-            <td>Alfreds Futterkiste</td>
-            <td>Germany</td>
-        </tr>
-        <tr>
-            <td>Berglunds snabbkop</td>
-            <td>Sweden</td>
-            <td>Berglunds snabbkop</td>
-            <td>Sweden</td>
-            <td>Berglunds snabbkop</td>
-            <td>Sweden</td>
-            <td>Berglunds snabbkop</td>
-            <td>Sweden</td>
-        </tr>
-        <tr>
-            <td>Island Trading</td>
-            <td>UK</td>
-            <td>Island Trading</td>
-            <td>UK</td>
-            <td>Island Trading</td>
-            <td>UK</td>
-            <td>Island Trading</td>
-            <td>UK</td>
-        </tr>
-        <tr>
-            <td>Koniglich Essen</td>
-            <td>Germany</td>
-            <td>Koniglich Essen</td>
-            <td>Germany</td>
-            <td>Koniglich Essen</td>
-            <td>Germany</td>
-            <td>Koniglich Essen</td>
-            <td>Germany</td>
-        </tr>
     </table>
 </body>
 <script>
@@ -118,7 +78,7 @@
         // Declare variables 
         var input, filter, table, tr, td, i;
         input = document.getElementById("myInput");
-        filter = input.value.toUpperCase();
+        filter = input.value;
         table = document.getElementById("myTable");
         tr = table.getElementsByTagName("tr");
 
@@ -134,26 +94,33 @@
             }
         }*/
         //
+        $('#myTable .data').remove();
+        var values = filter.split(" ");
+        var query = {};
+        for (var i=0; i<values.length; i++) {
+            var value_arr = values[i].split(":");
+            if (value_arr.length>1) {
+                query[value_arr[0]] = value_arr[1];
+            }
+            else {
+                query["all_columns"] = (query["all_columns"] || "") + ((query["all_columns"])? " " : "") + value_arr[0]
+            }
+        }
+        
         (function () {
             var api = "http://localhost:8000/v1.0/search";
-            $.getJSON(api, {
-                    "title": "ziv",
-                    "description": "desc",
-                    "category_name": "cat",
-                    "actor_name": "",
-                    "language_name": "lang",
-                })
+            $.getJSON(api, query)
                 .done(function (data) {
                     $.each(data, function (i, result) {
-                        var tr = $("<tr></tr>").appendTo(table);
-                        var title1 = $("<td></td>").text("title").appendTo(tr);
-                        var title2 = $("<td></td>").text("title").appendTo(tr);
-                        var title3 = $("<td></td>").text("title").appendTo(tr);
-                        var title4 = $("<td></td>").text("title").appendTo(tr);
-                        var title5 = $("<td></td>").text("title").appendTo(tr);
-                        var title6 = $("<td></td>").text("title").appendTo(tr);
-                        var title7 = $("<td></td>").text("title").appendTo(tr);
-                        var title8 = $("<td></td>").text("title").appendTo(tr);
+                        var tr = $("<tr></tr>").addClass("data").appendTo(table);
+                        var title1 = $("<td></td>").text(result.title).appendTo(tr);
+                        var title2 = $("<td></td>").text(result.description).appendTo(tr);
+                        var title3 = $("<td></td>").text(result.category_name).appendTo(tr);
+                        var title4 = $("<td></td>").text(result.release_year).appendTo(tr);
+                        var title5 = $("<td></td>").text(result.language_name).appendTo(tr);
+                        var title6 = $("<td></td>").text(result.length).appendTo(tr);
+                        var title7 = $("<td></td>").text(result.rating).appendTo(tr);
+                        var title8 = $("<td></td>").text(result["actor names"]).appendTo(tr);
                     });
                 });
                 })();
