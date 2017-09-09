@@ -18,112 +18,210 @@ console.log('Your application is running on http://localhost:' + port + ", Proce
 const { Wit, log } = require('node-wit');
 let request = require('request');
 
-// 1. Create a new entity - Create new keywords entity
-let keywords_entity = {
-    id: "mood_list",
-    doc: "this is a mood list",
-    lookups: ["keywords"] /* this is what make the entity to entity */
-}
+class Entity {
+    constructor(id, doc, lookup) {
+        this.id = id;
+        this.doc = doc;
+        this.lookups = [lookup];
+    }
 
-//2. Update the information of an entity
-let values_keywords = {
-    values: [
-        { value: "sad", expressions: ["sad"] },
-        { value: "happy", expressions: ["happy"] },
-        { value: "lover", expressions: ["lover"]}
-    ]
+    add_value(value) {
+        this.values = this.values || [];
+        this.values.push(value);
+    }
+
+    build_samples(value, type) {
+        let samples = [];
+        for (let i = 0; i < this.values.length; i++) {
+            for (let j = 0; j < this.values[i].expressions.length; j++) {
+                let sample = new Sample(this.values[i].expressions[j], this.id, this.values[i].value);
+                sample.set_parameter(value, type);
+                samples.push(sample);
+            }
+            return samples;
+        }
+    }
 };
 
-//3. Create new trait entity
-let trait_entity = {
-    id: "intent_mood",
-    doc: "this is the expressions for moods",
-    lookups: ["trait"], /* this is what make the entity to intent */
-    values: [{value: "action.mood"}]
+class Value {
+    constructor(value) {
+        this.value = value;
+        this.expressions = [];
+    }
+
+    add_expression(expression) {
+        this.expressions.push(expression);
+        return this;
+    }
+
+    set_expressions(expressions) {
+        this.expressions = expressions;
+    }
 }
 
-//4. Train your app - with samples
-let samples = [{
-    text: "my mood is sad",
-    entities: [{
-            entity: "intent_mood",
-            value: "action.mode"
-        },
-        {
-            entity: "mood_list",
-            value: "sad",
-            start: "10",
-            end: "13"
+class Sample {
+    constructor(user_says, intent, action) {
+        this.text = user_says;
+        this.entities = [
+            {
+                entity: intent,
+                value: action
+            }
+        ];
+
+    }
+
+    set_parameter(value, entity) {
+        if (this.text.includes(value)) {
+            let entity_tmp = {
+                entity: entity,
+                value: value,
+            }
+            entity_tmp.start = this.text.indexOf(value);
+            entity_tmp.end = entity_tmp.start + (value.length - 1);
+            this.entities.push(entity_tmp);
         }
-    ]},
-{
-    text: "today I dont feel nothing",
-    entities: [{
-            entity: "intent_mood",
-            value: "action.mode"
+    }
+}
+
+let entityObj = new Entity("mood_list", "this is a mood list", "keywords");
+
+entityObj.add_value(new Value("sad").add_expression("sad"));
+entityObj.add_value(new Value("happy").add_expression("happy"));
+entityObj.add_value(new Value("lover").add_expression("lover"));
+
+let entityObj1 = new Entity("intent_mood", "this is a expressions for moods", "trait");
+
+let value = new Value("action.mode");
+value.add_expression("my name is sad");
+value.add_expression("sad is my name");
+value.add_expression("today I feel ok");
+
+entityObj1.add_value(value);
+
+let sample1 = entityObj1.build_samples("sad", "mood_list");
+
+/*
+let entities = [
+    { // entity - list type
+        "id": "mood_list",
+        "doc": "this is a mood list",
+        "lookups": ["keywords"], 
+        "values": [
+            { "value": "sad", "expressions": ["sad"] },
+            { "value": "happy", "expressions": ["happy"] },
+            { "value": "lover", "expressions": ["lover"] }
+        ]
+    },
+    { // entity - intent type
+        "id": "intent_mood",
+        "doc": "this is the expressions for moods",
+        "lookups": ["trait"],
+        "values": [
+            { "value": "action.mood", "expressions": ["my name is sad", "sad is my name", "today I feel ok"] }
+        ]
+    }
+];
+
+let list = ["sad", "happy", "lover"];
+let entity1 = build_entity("mood_list", "this is a mood list", ["keywords"], []);
+for (let i = 0; i < list.length; i++) {
+    let keyword = {};
+    keyword.value = list[i];
+    keyword.expressions = [list[i]];
+    entity1.values.push(keyword);
+}
+//entity1.values.push({ "value": "sad", "expressions": ["sad"] });
+//entity1.values.push({ "value": "happy", "expressions": ["happy"] });
+//entity1.values.push({ "value": "lover", "expressions": ["lover"] });
+let list2 = ["my name is sad", "sad is my name", "today I feel ok"];
+let entity2 = build_entity("intent_mood", "this is the expressions for moods", ["trait"], []);
+let trait = {};
+trait.value = "action.mode";
+trait.expressions = [];
+for (let i = 0; i < list2.length; i++) {
+    trait.expressions.push(list2[i]);
+}
+entity2.values.push(trait);
+*/
+//entity2.values.push({ "value": "action.mood", "expressions": ["my name is sad", "sad is my name", "today I feel ok"] });
+/*
+let samples = [
+    {
+        text: "my name is sad",
+        entities: [
+            {
+                entity: "intent_mood",
+                value: "action.mode"
+            },
+            {
+                entity: "mood_list",
+                value: "sad",
+                start: 11,
+                end: 13
+            }
+        ]
+    },
+    {
+        text: "sad is my name",
+        entities: [
+            {
+                entity: "intent_mood",
+                value: "action.mode"
+            },
+            {
+                entity: "intent_mood",
+                value: "action.mode",
+                start: 0,
+                end: 2
+            }
+        ]
+    },
+    {
+        text: "today I feel ok",
+        entities: [
+            {
+                entity: "intent_mood",
+                value: "action.mode"
+            }
+        ]
+    }
+];
+*/
+Promise.all([
+    create_entity_promise(entityObj),
+    create_entity_promise(entityObj1)
+]).then(function (values) {
+    console.log("Promise All Values", values);
+    train_samples(sample1);    
+}).catch(function (err) {
+    console.log("Promise All Err", err);
+});
+// 1. Create a new entity
+// 2. Train your app - with samples
+
+function create_entity_promise(messageData) {
+    let entity_rq = new Promise(function (resolve, reject) {
+        let options = {
+            uri: "https://api.wit.ai/entities",
+            method: "POST",
+            headers: { "Authorization": "Bearer VW4PUE4TSJPOCQF5ZVOI6CEQZXUGDEDO", "Content-Type": "application/json" },
+            json: messageData
         }
-    ]},
-{
-    text: "I'm sad blue",
-    entities: [{
-            entity: "intent_mood",
-            value: "action.mode"
-        },
-        {
-            entity: "intent_mood",
-            value: "sad",
-            start: "4",
-            end: "7"
-        }]
-}];
-
-create_keywords_entity(keywords_entity, values_keywords);
-create_trait_entity(trait_entity, samples);
-
-
-
-
-
-function create_keywords_entity(messageData, values_keywords) {
-    let options = {
-        uri: "https://api.wit.ai/entities",
-        method: "POST",
-        headers: { "Authorization": "Bearer VW4PUE4TSJPOCQF5ZVOI6CEQZXUGDEDO", "Content-Type": "application/json" },
-        json: messageData
-    }
-    request(options, function (err, response, body) {
-        console.log("create_keywords_entity", body);
-        //
-        add_values_to_keywords_entity(messageData, values_keywords);
+        request(options, function (err, response, body) {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(body);
+            }
+            console.log("create_keywords_entity", body);
+        });
     });
+    return entity_rq;
 }
 
-function add_values_to_keywords_entity(entityData, messageData) {
-    let options = {
-        uri: "https://api.wit.ai/entities/" + entityData.id,
-        method: "PUT",
-        headers: { "Authorization": "Bearer VW4PUE4TSJPOCQF5ZVOI6CEQZXUGDEDO", "Content-Type": "application/json" },
-        json: messageData
-    }
-    request(options, function (err, response, body) {
-        console.log("add_values_to_keywords_entity", body);
-    });
-}
-
-function create_trait_entity(messageData, samples) {
-    let options = {
-        uri: "https://api.wit.ai/entities",
-        method: "POST",
-        headers: { "Authorization": "Bearer VW4PUE4TSJPOCQF5ZVOI6CEQZXUGDEDO", "Content-Type": "application/json" },
-        json: messageData
-    }
-    request(options, function (err, response, body) {
-        console.log("create_trait_entity", body);
-        add_samples_to_trait_entity(messageData, samples);
-    });
-}
-
-function add_samples_to_trait_entity(entityData, messageData) {
+function train_samples(messageData) {
     let options = {
         uri: "https://api.wit.ai/samples",
         method: "POST",
@@ -131,18 +229,12 @@ function add_samples_to_trait_entity(entityData, messageData) {
         json: messageData
     }
     request(options, function (err, response, body) {
-        console.log("add_samples_to_trait_entity", body);
+        console.log("train_samples", body);
     });
 }
-
-
-// 4. Add samples to trait entity
-// 5. App train with sample entity
-
-
 /*
 const client = new Wit({ accessToken: "VW4PUE4TSJPOCQF5ZVOI6CEQZXUGDEDO" });
-client.message('what is the weather in London?', {})
+client.message('lover is my name', {})
     .then((data) => {
         console.log('Yay, got Wit.ai response: ' + JSON.stringify(data));
     })
