@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node app.js"
   },
-  "author": "Ziv Brachia",
+  "author": "Ziv Brachia1",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.17.2",
